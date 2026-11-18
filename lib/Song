@@ -1,0 +1,8 @@
+class Song {
+  final String title, artist, url;
+  final int secs;
+  final List<Color> colors;
+  final List<String> lyrics;
+  const Song(this.title, this.artist, this.url, this.secs, this.colors,
+      this.lyrics);
+}
