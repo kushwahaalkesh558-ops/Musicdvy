@@ -1,13 +1,72 @@
-home: StreamBuilder<User?>(
-  stream: FirebaseAuth.instance.authStateChanges(),
-  builder: (c, snap) {
-    if (snap.connectionState == ConnectionState.waiting) {
-      return const Scaffold(
-          body: Center(child: CircularProgressIndicator()));
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  bool busy = false;
+  String? error;
+
+  Future<void> _run(Future<void> Function() f) async {
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await f();
+    } on FirebaseAuthException catch (e) {
+      if (mounted) setState(() => error = e.message ?? e.code);
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
     }
-    final u = snap.data;
-    if (u == null) return const LoginPage();
-    return HomePage(
-        user: u.isAnonymous ? 'Guest' : (u.displayName ?? u.email ?? 'User'));
-  },
-),
+    if (mounted) setState(() => busy = false);
+  }
+
+  Future<void> _google() async {
+    final provider = GoogleAuthProvider();
+    if (kIsWeb) {
+      await FirebaseAuth.instance.signInWithPopup(provider);
+    } else {
+      await FirebaseAuth.instance.signInWithProvider(provider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('musicdvy',
+                  style: TextStyle(fontSize: 44, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              const Text('Gaane, lyrics aur playlists, sab ek jagah.'),
+              const SizedBox(height: 28),
+              FilledButton(
+                  onPressed: busy ? null : () => _run(_google),
+                  child: const Text('Continue with Google')),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                  onPressed: busy
+                      ? null
+                      : () => _run(
+                          () => FirebaseAuth.instance.signInAnonymously()),
+                  child: const Text('Continue as guest')),
+              if (busy) ...[
+                const SizedBox(height: 20),
+                const Center(child: CircularProgressIndicator()),
+              ],
+              if (error != null) ...[
+                const SizedBox(height: 16),
+                Text(error!,
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.error)),
+              ],
+            ],
+          ),
+        ),
+      );
+}
