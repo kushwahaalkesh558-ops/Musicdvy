@@ -15,6 +15,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Create missing Android project
+        run: |
+          if [ ! -f pubspec.yaml ]; then
+            cp -r lib /tmp/lib_backup
+            flutter create --platforms=android --org com.musicdvy --project-name musicdvy .
+            cp -r /tmp/lib_backup/. lib/
+            flutter pub add just_audio
+            sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' android/app/src/main/AndroidManifest.xml
+          fi
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
