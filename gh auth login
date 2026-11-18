@@ -1,0 +1,1 @@
+gh pr create --title "Add musicdvy UI prototype" --body "Login, home, library, sound settings and player with synced lyrics"
