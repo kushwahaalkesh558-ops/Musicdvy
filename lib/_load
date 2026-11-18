@@ -1,0 +1,1 @@
+await player.setUrl(s.url);
