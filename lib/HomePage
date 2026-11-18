@@ -1,0 +1,3 @@
+IconButton(
+    onPressed: () => FirebaseAuth.instance.signOut(),
+    icon: const Icon(Icons.logout)),
