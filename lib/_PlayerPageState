@@ -1,0 +1,134 @@
+class _PlayerPageState extends State<PlayerPage> {
+  late int i = widget.index;
+  final player = AudioPlayer();
+  final scroll = ScrollController();
+  static const lineH = 64.0;
+  Duration pos = Duration.zero, total = Duration.zero;
+  bool playing = false;
+
+  Song get s => songs[i];
+  int get line {
+    if (total.inMilliseconds == 0) return 0;
+    final n = s.lyrics.length;
+    return (pos.inMilliseconds / (total.inMilliseconds / n))
+        .floor()
+        .clamp(0, n - 1);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    player.positionStream.listen((p) {
+      if (!mounted) return;
+      setState(() => pos = p);
+      if (scroll.hasClients) {
+        scroll.animateTo(line * lineH,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut);
+      }
+    });
+    player.durationStream.listen((d) {
+      if (mounted) setState(() => total = d ?? Duration.zero);
+    });
+    player.playerStateStream.listen((st) {
+      if (!mounted) return;
+      setState(() => playing = st.playing);
+      if (st.processingState == ProcessingState.completed) _change(1);
+    });
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      await player.setAsset(s.asset);
+      player.play();
+    } catch (e) {
+      debugPrint('Audio error: $e');
+    }
+  }
+
+  void _change(int d) {
+    setState(() => i = (i + d + songs.length) % songs.length);
+    if (scroll.hasClients) scroll.jumpTo(0);
+    _load();
+  }
+
+  String _fmt(Duration d) =>
+      '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+
+  @override
+  void dispose() {
+    player.dispose();
+    scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final max =
+        total.inMilliseconds > 0 ? total.inMilliseconds.toDouble() : 1.0;
+    return Scaffold(
+      appBar: AppBar(title: const Text('High · 320 kbps')),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+        child: Column(children: [
+          Container(
+              width: 92,
+              height: 92,
+              decoration: BoxDecoration(
+                  gradient: grad(s.colors),
+                  borderRadius: BorderRadius.circular(16))),
+          const SizedBox(height: 12),
+          Text(s.title,
+              style:
+                  const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+          Text(s.artist),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.builder(
+              controller: scroll,
+              itemExtent: lineH,
+              itemCount: s.lyrics.length,
+              itemBuilder: (c, k) => Align(
+                alignment: Alignment.centerLeft,
+                child: Text(s.lyrics[k],
+                    style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: k == line
+                            ? Colors.amber
+                            : cs.onSurface.withOpacity(0.4))),
+              ),
+            ),
+          ),
+          Slider(
+              value: pos.inMilliseconds.toDouble().clamp(0.0, max),
+              max: max,
+              onChanged: (v) =>
+                  player.seek(Duration(milliseconds: v.toInt()))),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(_fmt(pos)),
+            Text(_fmt(total))
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            IconButton(
+                iconSize: 32,
+                onPressed: () => _change(-1),
+                icon: const Icon(Icons.skip_previous)),
+            const SizedBox(width: 12),
+            IconButton.filled(
+                iconSize: 40,
+                onPressed: () => playing ? player.pause() : player.play(),
+                icon: Icon(playing ? Icons.pause : Icons.play_arrow)),
+            const SizedBox(width: 12),
+            IconButton(
+                iconSize: 32,
+                onPressed: () => _change(1),
+                icon: const Icon(Icons.skip_next)),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
