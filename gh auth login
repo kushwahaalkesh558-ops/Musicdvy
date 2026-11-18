@@ -1,1 +1,13 @@
-gh pr create --title "Add musicdvy UI prototype" --body "Login, home, library, sound settings and player with synced lyrics"
+home: StreamBuilder<User?>(
+  stream: FirebaseAuth.instance.authStateChanges(),
+  builder: (c, snap) {
+    if (snap.connectionState == ConnectionState.waiting) {
+      return const Scaffold(
+          body: Center(child: CircularProgressIndicator()));
+    }
+    final u = snap.data;
+    if (u == null) return const LoginPage();
+    return HomePage(
+        user: u.isAnonymous ? 'Guest' : (u.displayName ?? u.email ?? 'User'));
+  },
+),
