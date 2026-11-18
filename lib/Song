@@ -6,3 +6,4 @@ class Song {
   const Song(this.title, this.artist, this.url, this.secs, this.colors,
       this.lyrics);
 }
+'https://www.soundhelix.com/examples/m'https://www.soundhelix.com/examples/mp3'https://www.soundhelix.com/examples/mp3/Song('Raat ka Safar', 'Dev & The Echoes', 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 184, ...)SoundHelix-Song-3.mp3'/SoundHelix-Song-2.mp3'p3/SoundHelix-Song-1.mp3'
