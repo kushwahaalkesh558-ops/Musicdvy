@@ -1,41 +1,15 @@
-name: Build APK
+name: Issue assignment
+
 on:
-  workflow_dispatch:
-  push:
-    branches: [main]
+    issues:
+        types: [opened]
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - name: Create missing Android project
-        run: |
-          if [ ! -f pubspec.yaml ]; then
-            cp -r lib /tmp/lib_backup
-            flutter create --platforms=android --org com.musicdvy --project-name musicdvy .
-            cp -r /tmp/lib_backup/. lib/
-            flutter pub add just_audio
-            sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' android/app/src/main/AndroidManifest.xml
-          fi
-      - run: flutter pub get
-      - name: Build APK
-        run: |
-          set -o pipefail
-          flutter build apk --debug 2>&1 | tee build.log
-      - name: Show error summary
-        if: failure()
-        run: |
-          echo '<pre>' >> $GITHUB_STEP_SUMMARY
-          grep -n -B2 -A12 -E "What went wrong|Error:|error:" build.log | head -60 >> $GITHUB_STEP_SUMMARY
-          echo '</pre>' >> $GITHUB_STEP_SUMMARY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: musicdvy-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+    auto-assign:
+        runs-on: ubuntu-latest
+        steps:
+            - name: 'Auto-assign issue'
+              uses: pozil/auto-assign-issue@v1.11.0
+              with:
+                  assignees: phantsure,tiwarishub,anuragc617,vsvipul,bishal-pdmsft
+                  numOfAssignee: 1
